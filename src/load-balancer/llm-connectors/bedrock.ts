@@ -18,8 +18,8 @@ export class BedrockConnector extends LLMConnector {
 
     return {
       content: response.content.toString(), // CHECK: is this correct?
-      inputTokens: response.usage_metadata?.inputTokens,
-      outputTokens: response.usage_metadata?.outputTokens
+      inputTokens: response.usage_metadata?.input_tokens,
+      outputTokens: response.usage_metadata?.output_tokens
     }
   }
 }
