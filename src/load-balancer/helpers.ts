@@ -28,9 +28,10 @@ export const selectActiveModel = (state: LoadBalancerState, config: LoadBalancer
   const totalWeight = config.targetModels.reduce((acc, model) => acc + model.modelWeight, 0);
 
   // Calculate cumulative distribution
-  const cumulativeWeights: number[] = config.targetModels.map((model, index) => {
-    const previousWeight = index > 0 ? cumulativeWeights[index - 1] : 0;
-    return previousWeight + (model.modelWeight / totalWeight);
+  let accumulator = 0;
+  const cumulativeWeights = config.targetModels.map(model => {
+    accumulator += (model.modelWeight / totalWeight);
+    return accumulator;
   });
 
   // Generate a random number between 0 and 1
