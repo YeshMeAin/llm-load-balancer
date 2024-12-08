@@ -1,6 +1,6 @@
 {
   "name": "llm-load-balancer",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "A small service package allowing to perform load balancing of LLM prompts between models, regions and model hosting platforms ",
   "main": "index.js",
   "scripts": {
