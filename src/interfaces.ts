@@ -31,7 +31,8 @@ export interface TargetModel {
 
   // Model configurations
   temperature: number;
-
+  topP?: number;
+  maxTokens?: number;
   // will determine the probability of the model being chosen.
   // all model weights will be summed, and the weight of each model will be divided by the sum to determine the probability.
   modelWeight: number;
@@ -59,3 +60,17 @@ export interface LLMResponse {
   outputTokens: number;
 }
 
+export interface ModelComparisonResult {
+  prompt: string;
+  models: ModelResults[];
+  llmReview?: string;
+}
+
+export interface ModelResults {
+  model: string;
+  temperature: number;
+  topP?: number;
+  iterations: number;
+  averageRuntimeInSeconds: number;
+  responses: LLMResponse[];
+}

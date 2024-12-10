@@ -9,7 +9,9 @@ export class BedrockConnector extends LLMConnector {
     this.engine = new ChatBedrockConverse({
       temperature: this.modelConfig.temperature,
       model: this.modelConfig.modelName,
-      region: this.modelConfig.awsRegion
+      region: this.modelConfig.awsRegion,
+      topP: this.modelConfig.topP,
+      maxTokens: this.modelConfig.maxTokens
     });
   }
 

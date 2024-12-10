@@ -3,10 +3,12 @@ import EventEmitter from 'events';
 
 import { 
   LoadBalancerConfig, TargetModel, PromptStatsReport, LoadBalancerState, LoadBalancerEvent, 
-  LLMResponse
+  LLMResponse,
+  ModelComparisonResult,
+  ModelResults
 } from "../interfaces";
 
-import { selectActiveModel, buildInitialState, expireThrottles, buildStatsReport, setUpLLMConnector } from './helpers';
+import { selectActiveModel, buildInitialState, expireThrottles, buildStatsReport, setUpLLMConnector, buildReviewPrompt } from './helpers';
 import { LLMConnector } from './llm-connectors';
 
 export class LLMLoadBalancer extends EventEmitter {
@@ -78,6 +80,58 @@ export class LLMLoadBalancer extends EventEmitter {
     const statsReport = buildStatsReport(llmResponse, this.activeModel, totalTime, retryCount);
 
     return { llmResponse, statsReport };
+  }
+
+  // Model Comparison Logic
+  compareModelsForSinglePrompt = async (prompt: string, iterations: number, reviewingModel?: TargetModel, reviewPrompt?: string): Promise<ModelComparisonResult> => {
+    const report: ModelComparisonResult = {
+      prompt: prompt,
+      models: []
+    }
+
+    for (const model of this.config.targetModels) {
+      let iteration = 0;
+      let startTime = Date.now();
+
+      const responses: LLMResponse[] = [];
+      this.llmConnector = setUpLLMConnector(model);
+
+      while (iteration < iterations) {
+        try {
+          const llmResponse = await this.llmConnector.invoke(prompt);
+          responses.push(llmResponse);
+          iteration++;
+        } catch (error: any) {
+          console.error(`Error invoking model ${model.modelName}: ${error.message}`);
+          iteration++;
+        }
+      }
+
+      const totalTime = Date.now() - startTime;
+      const averageRuntimeInSeconds = totalTime / iterations;
+
+      const modelResults: ModelResults = {
+        model: model.modelName,
+        temperature: model.temperature,
+        topP: model.topP,
+        iterations: iterations,
+        averageRuntimeInSeconds: averageRuntimeInSeconds,
+        responses: responses
+      }
+
+      report.models.push(modelResults);
+    }
+
+    if (reviewingModel) {
+      const formattedReviewPrompt = buildReviewPrompt(report, reviewPrompt);
+
+      this.llmConnector = setUpLLMConnector(reviewingModel);
+
+      const llmReview = await this.llmConnector.invoke(formattedReviewPrompt);
+      report.llmReview = llmReview.content;
+    }
+
+    return report;
   }
 }
 

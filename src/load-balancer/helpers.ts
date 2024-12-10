@@ -1,4 +1,4 @@
-import { LoadBalancerState, LoadBalancerConfig, TargetModel, PromptStatsReport, LLMResponse } from "../interfaces";
+import { LoadBalancerState, LoadBalancerConfig, TargetModel, PromptStatsReport, LLMResponse, ModelComparisonResult, ModelResults } from "../interfaces";
 import { BedrockConnector, LLMConnector, VertexConnector } from "./llm-connectors";
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -66,4 +66,23 @@ export const buildStatsReport = (response: LLMResponse, model: TargetModel, tota
     totalRuntimeInSeconds: totalTime,
     retryCount: retryCount
   }
+}
+
+export const buildReviewPrompt = (report: ModelComparisonResult, reviewPrompt?: string): string => {
+  if (!reviewPrompt) {  
+    reviewPrompt = `
+      You are a helpful assistant that reviews the performance of multiple models.
+      You will be given a list of models and their responses to a prompt.
+      You will need to review the responses and determine which model performed the best.
+      You will need to provide a score for each model based on their performance.
+      You will need to provide a brief explanation for each score.
+
+      Please address consistency across iterations, quality of response, token usage, and adherence to the prompt.
+  `
+  }
+
+  return reviewPrompt + `
+    Here is the report:
+    ${JSON.stringify(report)}
+  `;
 }
