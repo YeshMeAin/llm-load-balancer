@@ -52,6 +52,8 @@ export interface LoadBalancerEvent {
   throttled: { model: string | undefined };
   retry: { model: string | undefined; attempt: number; error: string };
   totallyThrottled: { timeout: number };
+  error: { model: string | undefined; error: string };
+  successComparison: { model: string | undefined; iteration: number };
 }
 
 export interface LLMResponse {

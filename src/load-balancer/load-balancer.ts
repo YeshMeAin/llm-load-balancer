@@ -34,7 +34,7 @@ export class LLMLoadBalancer extends EventEmitter {
   }
 
   // Main Execution Logic
-  runSinglePrompt = async (prompt: string): Promise<{ llmResponse: LLMResponse, statsReport: PromptStatsReport }> => {
+  runSinglePrompt = async (prompt: string, throwOnThrottled: boolean = true): Promise<{ llmResponse: LLMResponse, statsReport: PromptStatsReport }> => {
     const startTime = Date.now();
 
     if (this.state === undefined) {
@@ -70,9 +70,15 @@ export class LLMLoadBalancer extends EventEmitter {
     }
 
     if (retryCount === this.config.maxRetriesOnFailure) {
-      this.emit('throttled', { model: this.activeModel.modelName });
       this.state[this.activeModel.modelName].throttled = true;
       this.state[this.activeModel.modelName].lastThrottledAt = Date.now();
+
+
+      if (throwOnThrottled) {
+        throw new Error('Model throttled');
+      } else {
+        this.emit('throttled', { model: this.activeModel.modelName });
+      }
     }
 
     // async reporting of enrichment stats
@@ -101,8 +107,9 @@ export class LLMLoadBalancer extends EventEmitter {
           const llmResponse = await this.llmConnector.invoke(prompt);
           responses.push(llmResponse);
           iteration++;
+          this.emit('successComparison', { model: model.modelName, iteration: iteration });
         } catch (error: any) {
-          console.error(`Error invoking model ${model.modelName}: ${error.message}`);
+          this.emit('error', { model: model.modelName, error: error.message });
           iteration++;
         }
       }
